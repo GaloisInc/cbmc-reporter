@@ -1,0 +1,3 @@
+[submodule "submodules/simple-spreadsheet-tools"]
+	path = submodules/simple-spreadsheet-tools
+	url = git@github.com:glguy/simple-spreadsheet-tools.git
