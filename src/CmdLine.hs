@@ -78,6 +78,7 @@ data Opts = Opts
  , coverage :: Entries        -- ^ Minimal set coverage or run from all entries?
  , outfile  :: Maybe FilePath -- ^ A file to write the generated table
  , sort     :: Sort           -- ^ Column to sort the generated table.
+ , threads  :: Integer
  , help     :: Bool
  -- Internally used options
  , toExec   :: FilePath       -- ^ Timeout executable
@@ -96,6 +97,7 @@ defaultOpts  = Opts
   , coverage = Min
   , outfile  = Nothing -- default: standard out
   , sort     = File
+  , threads  = 2
   , help     = False
   , toExec   = ""
   }
@@ -112,6 +114,7 @@ options =
   , Option "e"  ["entries"]    entOpt   entHlp
   , Option "o"  ["outfile"]    outOpt   outHlp
   , Option "r"  ["sort"]       sortOpt  sortHlp
+  , Option "d"  ["threads"]     thrdOpt  thrdHlp
   , Option "h"  ["help"]       helpOpt  helpHlp
   ]
   where
@@ -195,6 +198,15 @@ options =
     , "For each claim: file name, function,"
     , "line number, entry point, or result"
     , "(true or false).  Default: file."
+    ]
+
+  thrdOpt = ReqArg (\n opts -> opts {threads = read n}) "INT"
+  thrdHlp = unwords
+    [ "Specify the maximum number of threads to issue."
+    , "There is no problem with specifying more threads"
+    , "than available cores, but note that each thread"
+    , "spawns a model-checker, which may consume enough"
+    , "memory to cause your system to thrash."
     ]
 
   helpOpt = NoArg (const defaultOpts {help = True})

@@ -32,6 +32,7 @@ executable cbmc-reporter
                         xml,
                         monadLib,
                         language-c,
-                        Spreadsheet
+                        Spreadsheet,
+                        SafeSemaphore
   default-language:     Haskell2010
   ghc-options:          -Wall -O2 -threaded -rtsopts -with-rtsopts=-N

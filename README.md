@@ -97,10 +97,13 @@ from every entry point.
 
 If no functions are explicitly provided, e.g.,
 
-    > cbmc-reporter -s s0.c -s s1.c -I hdr.h -- --win64
+    > cbmc-reporter -s s0.c -s s1.c -I hdr.h --threads=4 -- --win64
 
 then cbmc-reporter parses the sources (after pre-processing) to discover all
-top-level functions.
+top-level functions.  Also, in this example, the `--threads=4` flag says to
+spawn no more than four concurrent CBMC instances simultaneously (the problem
+with too many concurrent instances is typically too much memory being consumed,
+leading to thrashing).
 
 cbmc-reporter generates tables summarizing claims proved or disproved.  For example:
 
@@ -136,6 +139,7 @@ A typical Makefile rule for using cbmc-reporter is as follows:
     verify: $(SRCS) $(INCS)
       cbmc-reporter \
       --format=markdown \
+      --threads=3 \
       --timeout=10 \
       --no-asserts \
       --cbmc=$(CBMC_EXEC) \

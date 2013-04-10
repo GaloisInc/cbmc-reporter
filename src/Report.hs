@@ -33,6 +33,7 @@ import Control.Monad
 import Data.Monoid hiding (All)
 
 import Control.Concurrent
+import Control.Concurrent.MSem
 
 import qualified Spreadsheet as S
 import qualified Spreadsheet.Renderer as S
@@ -209,31 +210,34 @@ run opts@Opts {cbmc, function} = do
 
 spawnCBMC :: Opts
           -> Output
-          -> (Chan ChanData -> [a] -> Int -> CBMC [a])
+          -> (MSem Integer -> Chan ChanData -> [a] -> Int -> CBMC [a])
           -> [Func]
           -> [a]
           -> CBMC [a]
 spawnCBMC opts outFormat folder funcs init = do
   chan <- liftIO newChan
-  forM_ funcs (spawnThread chan)
-  foldM (folder chan) init [1..length funcs]
+  sem  <- liftIO $ new (threads opts)
+  forM_ funcs (spawnThread sem chan)
+  foldM (folder sem chan) init [1..length funcs]
   where
-  spawnThread :: Chan ChanData -> Func -> CBMC ThreadId
-  spawnThread chan func = do
+  spawnThread :: MSem Integer -> Chan ChanData -> Func -> CBMC ThreadId
+  spawnThread sem chan func = do
     putStrLnM $ "  Spawning thread: "
               ++ pshow outFormat ++ " from function "
               ++ func ++ " ... "
-    liftIO $ forkIO $ runCBMC chan outFormat opts func
+    liftIO $ forkIO $ runCBMC sem chan outFormat opts func
 
 --------------------------------------------------------------------------------
 
 -- Initalized with all possible claims.
-collectResults :: Chan ChanData
+collectResults :: MSem Integer
+               -> Chan ChanData
                -> [Claim]
                -> Int
                -> CBMC [Claim]
-collectResults chan claims _ = do
+collectResults sem chan claims _ = do
   (merr, func, output) <- liftIO (readChan chan)
+  liftIO $ signal sem
   maybeInsertErr merr
   let parsedRes        = parseResXML output
   reses               <- errNoParse [(func, parsedRes)]
@@ -256,9 +260,10 @@ markFailure entry reses c@Claim{claimFile, claimFunc, claimLine, claimEntry} =
 --------------------------------------------------------------------------------
 
 -- | Get location info for all reachable claims.
-collectClaims :: Chan ChanData -> [Claim] -> Int -> CBMC [Claim]
-collectClaims chan claims _ = do
+collectClaims :: MSem Integer -> Chan ChanData -> [Claim] -> Int -> CBMC [Claim]
+collectClaims sem chan claims _ = do
   (merr, func, output)  <- liftIO (readChan chan)
+  liftIO $ signal sem
   maybeInsertErr merr
   let parsedClaims      = parseClaimsXML output
   let claimsWithFunc    = zip (repeat func) parsedClaims
@@ -267,12 +272,14 @@ collectClaims chan claims _ = do
 
 --------------------------------------------------------------------------------
 
-allReaches :: Chan ChanData
+allReaches :: MSem Integer
+           -> Chan ChanData
            -> [FuncsCoverage]
            -> Int
            -> CBMC [FuncsCoverage]
-allReaches chan claims _ = do
+allReaches sem chan claims _ = do
   (merr, func, output) <- liftIO (readChan chan)
+  liftIO $ signal sem
   asserts <- errNoParse $ zip (repeat func) (parseReachableXML output)
   -- Don't insert the function if we got an error processing it.
   return $ if isJust merr then claims else (func, asserts) : claims
@@ -281,8 +288,9 @@ allReaches chan claims _ = do
 -- Running CBMC.
 
 -- Entry point to call CBMC.
-runCBMC :: Chan ChanData -> Output -> Opts -> Func -> IO ()
-runCBMC chan outputType opts func = do
+runCBMC :: MSem Integer -> Chan ChanData -> Output -> Opts -> Func -> IO ()
+runCBMC sem chan outputType opts func = do
+  wait sem
   (merr, output) <- getCBMCOutPut opts func outputType
   writeChan chan (merr, func, output)
 
