@@ -128,7 +128,9 @@ main = do
   where
 
   allOut ss clms errs  = unlines
-                  $ ["", ss]
+                  $ "Claims Table"
+                  : "------------"
+                  : ["", ss]
                  ++ ["", totals (cnt clms), ""]
                  ++ if null errs then [] else [outErrs errs]
 
@@ -141,7 +143,8 @@ main = do
 
   outErrs        :: [String] -> String
   outErrs errs   = unlines $ "************"
-                           : "* Warnings *"
+                           : "Warnings"
+                           : "--------"
                            : map ("\n  * "++) errs
 
 -- Main driver function.
