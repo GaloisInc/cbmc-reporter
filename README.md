@@ -8,7 +8,8 @@ library code.  cbmc-reporter helps
 1. utilize multi-threading when verifying a
 large number of claims,
 2. generates summary tables of resulting proofs,
-3. aids in build-system integration for library code.
+3. aids in build-system integration for library code (e.g., parsing function
+definitions from sources).
 
 The authors of CBMC are not associated with nor do they endorse this software.
 CBMC is open-source but please review its [license](http://www.cprover.org/cbmc/LICENSE) if you choose to use it.
