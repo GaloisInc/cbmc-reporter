@@ -26,6 +26,7 @@ import Prelude hiding (init)
 import System.Exit
 import System.Process
 import System.Environment
+import System.FilePath
 import System.Directory
 import Data.List hiding (sort, init)
 import Data.Maybe
@@ -123,7 +124,11 @@ main = do
                       = S.renderSmd (spreadSheetize opts' claims)
 
       maybe ( putStrLn $ allOut spreadsheet claims errs )
-            ( flip writeFile $ allOut spreadsheet claims errs )
+            ( \f ->    putStrLn ("Attempting to write to " ++ show f ++ " ...")
+                    >> createDirectoryIfMissing True (takeDirectory f)
+                    >> writeFile f (allOut spreadsheet claims errs)
+                    >> putStrLn "Done!"
+            )
             ( outfile opts' )
   where
 

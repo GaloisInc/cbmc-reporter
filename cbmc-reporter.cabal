@@ -27,6 +27,7 @@ executable cbmc-reporter
   hs-source-dirs:       src
   build-depends:        base >= 4.6 && < 5,
                         directory,
+                        filepath,
                         process,
                         pretty,
                         xml,
