@@ -73,7 +73,7 @@ instance Monoid Error where
 -- CBMC Monad and functions.
 
 newtype CBMC a = CBMC { unCBMC :: M.WriterT Error IO a }
-  deriving Monad
+  deriving (Functor, Applicative, Monad)
 
 insertErr :: String -> CBMC ()
 insertErr err = CBMC (M.put $ Error [err])
